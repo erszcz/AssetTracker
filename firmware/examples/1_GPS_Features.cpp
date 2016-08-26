@@ -13,6 +13,7 @@ reading the battery level, and manually requesting a GPS reading.
 int transmitMode(String);
 int gpsPublish(String);
 int batteryStatus(String);
+int setPublishDelay(String);
 
 // Set whether you want the device to publish data to the internet by default here.
 // 1 will Particle.publish AND Serial.print, 0 will just Serial.print
@@ -23,8 +24,10 @@ int transmittingData = 1;
 // Used to keep track of the last time we published data
 long lastPublish = 0;
 
-// How many minutes between publishes? 10+ recommended for long-time continuous publishing!
-int delayMinutes = 10;
+// How many seconds between publishes? 600+ recommended for long-time continuous publishing!
+const int DEFAULT_DELAY = 600;
+int delaySeconds = DEFAULT_DELAY;
+char delayCommand[16+1];
 
 // Creating an AssetTracker named 't' for us to reference
 AssetTracker t = AssetTracker();
@@ -49,6 +52,7 @@ void setup() {
     Particle.function("tmode", transmitMode);
     Particle.function("batt", batteryStatus);
     Particle.function("gps", gpsPublish);
+    Particle.function("delay", setPublishDelay);
 }
 
 // loop() runs continuously
@@ -57,7 +61,7 @@ void loop() {
     t.updateGPS();
 
     // if the current time - the last time we published is greater than your set delay...
-    if(millis()-lastPublish > delayMinutes*60*1000){
+    if(millis()-lastPublish > delaySeconds*1000){
         // Remember when we published
         lastPublish = millis();
         
@@ -120,4 +124,23 @@ int batteryStatus(String command){
     if(fuel.getSoC()>10){ return 1;} 
     // if you're running out of battery, return 0
     else { return 0;}
+}
+
+int setPublishDelay(String command) {
+    bzero(delayCommand, sizeof(delayCommand));
+    command.toCharArray(delayCommand, sizeof(delayCommand)-1);
+    int delay = atoi(delayCommand);
+    int r = 0;
+    if (delay == 0) {
+        delaySeconds = DEFAULT_DELAY;
+        r = 1;
+    } else if (delay > 0 && delay <= 3600) {
+        delaySeconds = delay;
+        r = 1;
+    } else {
+        r = 0;
+    }
+    Particle.publish("F", "d:" + String::format("%d", delaySeconds),
+                     60, PRIVATE);
+    return r;
 }
