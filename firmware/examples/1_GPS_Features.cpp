@@ -9,6 +9,11 @@ reading the battery level, and manually requesting a GPS reading.
 // Getting the library
 #include "AssetTracker/AssetTracker.h"
 
+// Forward declarations
+int transmitMode(String);
+int gpsPublish(String);
+int batteryStatus(String);
+
 // Set whether you want the device to publish data to the internet by default here.
 // 1 will Particle.publish AND Serial.print, 0 will just Serial.print
 // Extremely useful for saving data while developing close enough to have a cable plugged in.
